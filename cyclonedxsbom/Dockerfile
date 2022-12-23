@@ -1,9 +1,10 @@
 FROM node:18.12.1-bullseye-slim
 
 RUN apt update
-RUN npm install --global @cyclonedx/cyclonedx-npm
 
-COPY gen_sbom.sh /build/gen_sbom.sh
+COPY gen_sbom.sh /opt/gen_sbom.sh
+
+ENV PATH="/opt:${PATH}"
 
 WORKDIR /build
-ENTRYPOINT ["./gen_sbom.sh", "-h"]
+ENTRYPOINT ["gen_sbom.sh"]
