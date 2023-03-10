@@ -3,24 +3,30 @@ set -e
 
 ## purpose: generate a CycloneDX sBOM
 
+OUTPUT_DIRECTORY="output"
+
+if [ ! -d "${OUTPUT_DIRECTORY}" ]; then
+  mkdir "${OUTPUT_DIRECTORY}"
+fi
+
+if [ -z ${BITBUCKET_REPO_SLUG} ]; then
+    OUTPUT_FILENAME="${OUTPUT_DIRECTORY}/sbom.json"
+else
+    OUTPUT_FILENAME="${OUTPUT_DIRECTORY}/${BITBUCKET_REPO_SLUG}.json"
+fi
+
+SWITCHES_GLOBAL="--output-file ${OUTPUT_FILENAME} --short-PURLs"
+
 help() {
   echo "Generates a CycloneDX sBOM file for the given project"
 }
 
 gen_sbom_for_npm_project() {
-  OUTPUT_FILENAME="sbom.json"
-  SWITCHES_GLOBAL="--flatten-components --output-file ${OUTPUT_FILENAME} --short-PURLs"
+  SWITCHES_NPM=""
 
   npx --yes --package @cyclonedx/cyclonedx-npm --call exit
-
-  if [ -f "package-lock.json" ] || [ -f "npm-shrinkwrap.json" ]; then
-    echo "found npm package lock file. Using --package-lock-only switch"
-    npx @cyclonedx/cyclonedx-npm ${SWITCHES_GLOBAL} --package-lock-only
-  else
-    echo "no npm package lock file found. running with npm install"
-    npm install --force
-    npx @cyclonedx/cyclonedx-npm ${SWITCHES_GLOBAL} --ignore-npm-errors
-  fi
+  npm install
+  npx @cyclonedx/cyclonedx-npm ${SWITCHES_NPM} ${SWITCHES_GLOBAL}
 }
 
 if [ "$1" == "-h" ]; then
@@ -33,5 +39,6 @@ if [ -f "package.json" ]; then
   gen_sbom_for_npm_project
 else
   echo "ERROR: unknown project format"
-  exit 1
+  echo "currently only node/npm based projects are supported"
+  exit 0
 fi
